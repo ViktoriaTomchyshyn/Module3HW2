@@ -34,5 +34,15 @@ namespace Module3HW2
             var name2 = ((IPhoneRecord)y).Name;
             return name1.CompareTo(name2);
         }
+
+        public int CompareTo(IPhoneRecord other)
+        {
+            return Compare(this, other);
+        }
+
+        public override string ToString()
+        {
+            return Name + " " + PhoneNumber + "\n";
+        }
     }
 }

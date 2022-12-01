@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -13,74 +15,103 @@ namespace Module3HW2
         IMyCollection<IPhoneRecord>,
         IEnumerable<IPhoneRecord>
     {
-        private Dictionary<string, List<IPhoneRecord>> _data;
-        private CultureInfo _currentCulture;
+        private List<PhoneChapter> _data;
+        private SupportedCultures _supportedCultures;
+        private Culture _currentCulture;
 
         public MyCollection()
         {
-            _data = new Dictionary<string, List<IPhoneRecord>>();
-            _currentCulture = new CultureInfo("en-US");
+            _data = new List<PhoneChapter>();
+            _currentCulture = new Culture("English", "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM".ToCharArray().ToList());
+            var supportedCultures = new List<Culture>();
+            supportedCultures.Add(_currentCulture);
+            _supportedCultures = new SupportedCultures(supportedCultures);
             SetChapters();
         }
 
-        public MyCollection(CultureInfo culture)
+        public MyCollection(SupportedCultures sc, Culture culture)
         {
-            _data = new Dictionary<string, List<IPhoneRecord>>();
+            _data = new List<PhoneChapter>();
             _currentCulture = culture;
+            _supportedCultures = sc;
             SetChapters();
         }
 
         public void Add(IPhoneRecord record)
         {
-            // int ignoreMe;
-            //// choose chapter logic
-            // if (string.Equals(record.Name.ToCharArray()[0], _currentCulture))
-            // {
-            //    _data["A - Z"].Add(record);
-            // }
-            // else if (int.TryParse((char)record.Name.ToCharArray()[0], out ignoreMe))
-            // {
+            int ignoreMe;
 
-            // }
+            // choose chapter logic
+            if (_supportedCultures.Cultures.Contains(_currentCulture) &&
+                _currentCulture.Characters.Contains(record.Name.ToCharArray()[0]))
+            {
+                _data[0].AddRecord(record);
+            }
+            else if (int.TryParse(record.Name.ToCharArray()[0].ToString(), out ignoreMe))
+            {
+                _data[1].AddRecord(record);
+            }
+            else
+            {
+                _data[2].AddRecord(record);
+            }
         }
 
         public List<PhoneChapter> GetAll()
         {
-            var list = new List<PhoneChapter>();
-            foreach (var item in _data)
-            {
-                list.Add(new PhoneChapter(item.Key, item.Value));
-            }
-
-            return list;
+            return _data;
         }
 
         public IEnumerator<IPhoneRecord> GetEnumerator()
         {
-            throw new NotImplementedException();
+            var data = new List<IPhoneRecord>();
+            foreach (var item in _data)
+            {
+                item.Sort();
+                data.AddRange(item.Contacts);
+            }
+
+            return new MyCollectionEnumerator<IPhoneRecord>(data.ToArray());
         }
 
         public void Remove(IPhoneRecord record)
         {
-            foreach (var item in _data.Values)
+            foreach (var item in _data)
             {
-                if (item.Contains(record))
-                {
-                    item.Remove(record);
-                }
+               if (item.Contacts.Contains(record))
+               {
+                  item.RemoveRecord(record);
+               }
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            throw new NotImplementedException();
+            var data = new List<IPhoneRecord>();
+            foreach (var item in _data)
+            {
+                data.AddRange(item.Contacts);
+            }
+
+            return new MyCollectionEnumerator<IPhoneRecord>(data.ToArray());
+        }
+
+        public override string ToString()
+        {
+            string res = string.Empty;
+            foreach (var item in _data)
+            {
+                res += item.ToString();
+            }
+
+            return res;
         }
 
         private void SetChapters()
         {
-            _data.Add("A-Z", null);
-            _data.Add("0-9", null);
-            _data.Add("#", null);
+            _data.Add(new PhoneChapter("A-Z", null));
+            _data.Add(new PhoneChapter("0-9", null));
+            _data.Add(new PhoneChapter("#", null));
         }
     }
 }
